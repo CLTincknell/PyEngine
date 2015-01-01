@@ -3,24 +3,20 @@ import sdl2
 import sdl2.ext
 import os
 
-from engine import Input
+from engine import Input, Stage
 
 class Game(object):
 
 	game = None
-	
-	fullscreen = False
 	
 	width = 800
 	height = 600
 	
 	quit = False
 
-	#put this inside a Stage object
-	window = None
-	world = None
-	
 	input = None
+	
+	stage = None
 	
 	def __new__(cls, *p, **k):
 		if not cls.game:
@@ -32,7 +28,7 @@ class Game(object):
 		
 		sdl2.ext.init()
 		
-		self.window = sdl2.ext.Window("Game", size = (self.width, self.height))
+		
 		self.world = sdl2.ext.World()
 		
 		self.input = Input.Input()
@@ -47,9 +43,10 @@ class Game(object):
 		self.input.register("exit", sdl2.SDLK_ESCAPE)
 		self.input.register("jump", sdl2.SDLK_SPACE)
 		self.input.register("fullscreen", sdl2.SDLK_f)
+		
+		self.stage = Stage.Stage()
 
 	def run(self):
-		self.window.show()
 		
 		while not self.quit:
 			self.parseEvents()
@@ -59,18 +56,12 @@ class Game(object):
 				self.quit = True
 			
 			if self.input.clicked("fullscreen"):
-				if self.fullscreen:
-					self.fullscreen = False
-					sdl2.SDL_SetWindowFullscreen(self.window.window, 0)
-				else:
-					self.fullscreen = True
-					sdl2.SDL_SetWindowFullscreen(self.window.window, sdl2.SDL_WINDOW_FULLSCREEN_DESKTOP)
+				self.stage.toggleFullscreen()
 			
 				
-			
-			sdl2.SDL_Delay(15)
-			self.window.refresh()
+			self.stage.render()
 			self.world.process()
+			sdl2.SDL_Delay(15)
 			
 	def parseEvents(self):
 		events = sdl2.ext.get_events()

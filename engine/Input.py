@@ -3,28 +3,35 @@ import sdl2.ext
 
 class Input(object):
 	
-	registered = None
-	mouse = None
+	initialized = False
+	input = None
 	
+	def __new__(cls, *p, **k):
+		if not cls.input:
+			cls.input = super(Input, cls).__new__(cls, *p, **k)
+		return cls.input		
+		
 	def __init__(self):
+		if self.initialized:
+			return
 		self.registered = {}
 		self.mouse = Mouse()
+		self.initialized = True
 	
 	def register(self, keyword, keycode):
 		self.registered[keyword] = Key(keycode)
 		
 	def parseEvents(self, events):
-		if self.mouse.clicked:
-			self.mouse.clicked = False
-			self.mouse.pressed = True
+		self.mouse.clear()
 		for keyword, key in self.registered.items():
-			if key.clicked:
-				key.clicked = False
-				key.pressed = True
+			key.clear()
+			
 		for event in events:
 			if event.type in [sdl2.SDL_MOUSEBUTTONDOWN, sdl2.SDL_MOUSEBUTTONUP]:
 				self.mouse.update(event)
 				continue
+			elif event.type in [sdl2.SDL_JOYBUTTONDOWN, sdl2.SDL_JOYBUTTONUP]:
+				print(event.type)
 			else:
 				for keyword, key in self.registered.items():
 					if key.keycode == event.key.keysym.sym:
@@ -42,18 +49,16 @@ class Input(object):
 	
 class InputObject(object):
 	
-	DOWN = None
-	UP = None
-	
-	pressed = False
-	clicked = False
-	released = True
-	
+	def __init__(self):
+		self.DOWN = None
+		self.UP = None
+		self.pressed = False
+		self.clicked = False
+		self.released = True
+		
 	def update(self, event):
 		if event.type == self.DOWN:
-			if self.pressed:
-				self.clicked = False
-			else:
+			if not self.pressed:
 				self.clicked = True
 			self.pressed = True
 			self.released = False
@@ -62,17 +67,21 @@ class InputObject(object):
 			self.pressed = False
 			self.released = True
 	
+	def clear(self):
+		self.pressed = False
+		self.released = True
+	
 class Key(InputObject):
-
-	keycode = None
 	
 	def __init__(self, keycode):
-		self.keycode = keycode
+		super(Key, self).__init__()
 		self.DOWN = sdl2.SDL_KEYDOWN
 		self.UP = sdl2.SDL_KEYUP
+		self.keycode = keycode
 
 class Mouse(InputObject):
 
 	def __init__(self):
+		super(Mouse, self).__init__()
 		self.DOWN = sdl2.SDL_MOUSEBUTTONDOWN
 		self.UP = sdl2.SDL_MOUSEBUTTONUP
